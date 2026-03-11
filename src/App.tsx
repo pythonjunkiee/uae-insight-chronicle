@@ -9,6 +9,7 @@ import MapPage from "./pages/MapPage";
 import TimelinePage from "./pages/TimelinePage";
 import IncidentsPage from "./pages/IncidentsPage";
 import AboutPage from "./pages/AboutPage";
+import TributePage from "./pages/TributePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/timeline" element={<TimelinePage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/tribute" element={<TributePage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
