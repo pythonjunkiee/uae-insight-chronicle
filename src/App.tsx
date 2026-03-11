@@ -9,6 +9,7 @@ import MapPage from "./pages/MapPage";
 import TimelinePage from "./pages/TimelinePage";
 import IncidentsPage from "./pages/IncidentsPage";
 import AboutPage from "./pages/AboutPage";
+import TributePage from "./pages/TributePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
