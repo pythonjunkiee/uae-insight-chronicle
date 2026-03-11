@@ -9,6 +9,7 @@ const navLinks = [
   { to: "/timeline", label: "Timeline" },
   { to: "/incidents", label: "Incidents" },
   { to: "/about", label: "About" },
+  { to: "/tribute", label: "Tribute 🇦🇪" },
 ];
 
 const Navbar = () => {
