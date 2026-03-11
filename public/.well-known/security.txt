@@ -1,0 +1,11 @@
+# UAE Threat Tracker Security Policy
+# https://securitytxt.org/
+
+Contact: mailto:security@uae-threat-tracker.example.com
+Preferred-Languages: en, ar
+Canonical: https://uae-threat-tracker.example.com/.well-known/security.txt
+Policy: https://uae-threat-tracker.example.com/security-policy
+Expires: 2027-03-11T00:00:00.000Z
+
+# If you discover a security vulnerability, please report it responsibly.
+# We appreciate your help in keeping this project and its users safe.
