@@ -3,15 +3,18 @@ import { Search, Download, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { incidents, incidentTypeBadgeClasses, type Incident } from "@/data/incidents";
+import { incidentTypeBadgeClasses, type Incident } from "@/data/incidents";
+import { useLiveIncidents } from "@/hooks/useLiveIncidents";
 
 const typeList: Incident["type"][] = ["Missile", "Drone", "UAV", "Interception"];
 const outcomeList: Incident["outcome"][] = ["Intercepted", "Hit", "Blocked"];
 const PAGE_SIZE = 20;
 
 const IncidentsPage = () => {
+  const { incidents, loading } = useLiveIncidents();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
@@ -32,7 +35,7 @@ const IncidentsPage = () => {
       return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
     });
     return data;
-  }, [search, typeFilter, outcomeFilter, sortField, sortDir]);
+  }, [incidents, search, typeFilter, outcomeFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -95,23 +98,31 @@ const IncidentsPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginated.map((i) => (
-              <TableRow key={i.id}>
-                <TableCell className="text-sm whitespace-nowrap">{new Date(i.date).toLocaleDateString()}</TableCell>
-                <TableCell className="text-sm">{i.location}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={`text-[10px] ${incidentTypeBadgeClasses[i.type]}`}>{i.type}</Badge>
-                </TableCell>
-                <TableCell className="text-sm">{i.targetArea}</TableCell>
-                <TableCell className="text-sm">{i.outcome}</TableCell>
-                <TableCell>
-                  <a href={i.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </TableCell>
-              </TableRow>
-            ))}
-            {paginated.length === 0 && (
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 6 }).map((_, j) => (
+                      <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : paginated.map((i) => (
+                  <TableRow key={i.id}>
+                    <TableCell className="text-sm whitespace-nowrap">{new Date(i.date).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-sm">{i.location}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`text-[10px] ${incidentTypeBadgeClasses[i.type]}`}>{i.type}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{i.targetArea}</TableCell>
+                    <TableCell className="text-sm">{i.outcome}</TableCell>
+                    <TableCell>
+                      <a href={i.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            {!loading && paginated.length === 0 && (
               <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No incidents found.</TableCell></TableRow>
             )}
           </TableBody>

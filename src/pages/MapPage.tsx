@@ -2,11 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
-import { incidents, incidentTypeColors, type Incident } from "@/data/incidents";
+import { Skeleton } from "@/components/ui/skeleton";
+import { incidentTypeColors, type Incident } from "@/data/incidents";
+import { useLiveIncidents } from "@/hooks/useLiveIncidents";
 
 const typeList: Incident["type"][] = ["Missile", "Drone", "UAV", "Interception"];
 
 const MapPage = () => {
+  const { incidents, loading } = useLiveIncidents();
   const [activeTypes, setActiveTypes] = useState<Set<Incident["type"]>>(new Set(typeList));
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,6 +22,12 @@ const MapPage = () => {
       return next;
     });
   };
+
+  // Count per type
+  const typeCounts = typeList.reduce((acc, t) => {
+    acc[t] = incidents.filter((i) => i.type === t).length;
+    return acc;
+  }, {} as Record<string, number>);
 
   // Initialize map
   useEffect(() => {
@@ -42,25 +51,28 @@ const MapPage = () => {
     };
   }, []);
 
-  // Update markers when filters change
+  // Update markers when filters or incidents change
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear existing markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     const filtered = incidents.filter((i) => activeTypes.has(i.type));
+    const now = Date.now();
+    const DAY_MS = 24 * 60 * 60 * 1000;
 
     filtered.forEach((incident) => {
       const color = incidentTypeColors[incident.type];
+      const isRecent = now - new Date(incident.date).getTime() < DAY_MS;
       const marker = L.circleMarker(incident.coordinates, {
         radius: 10,
         color,
         fillColor: color,
         fillOpacity: 0.6,
         weight: 2,
+        className: isRecent ? "animate-pulse" : "",
       }).addTo(map);
 
       marker.bindPopup(`
@@ -78,7 +90,7 @@ const MapPage = () => {
 
       markersRef.current.push(marker);
     });
-  }, [activeTypes]);
+  }, [activeTypes, incidents]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -93,12 +105,20 @@ const MapPage = () => {
             style={activeTypes.has(type) ? { backgroundColor: incidentTypeColors[type] } : {}}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: incidentTypeColors[type] }} />
-            {type}
+            {type} ({typeCounts[type]})
           </Button>
         ))}
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 relative">
+        {loading && (
+          <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-background/60 backdrop-blur-sm">
+            <div className="text-center space-y-2">
+              <Skeleton className="h-8 w-48 mx-auto" />
+              <p className="text-sm text-muted-foreground">Loading live data…</p>
+            </div>
+          </div>
+        )}
         <div ref={containerRef} className="h-full w-full" style={{ background: "hsl(222, 47%, 6%)" }} />
       </div>
     </div>
