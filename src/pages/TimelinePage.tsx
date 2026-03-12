@@ -2,12 +2,15 @@ import { useState, useMemo } from "react";
 import { ExternalLink, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { incidents, incidentTypeBadgeClasses, type Incident } from "@/data/incidents";
+import { incidentTypeBadgeClasses, type Incident } from "@/data/incidents";
+import { useLiveIncidents } from "@/hooks/useLiveIncidents";
 
 const typeList: Incident["type"][] = ["Missile", "Drone", "UAV", "Interception"];
 
 const TimelinePage = () => {
+  const { incidents, loading } = useLiveIncidents();
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -15,7 +18,7 @@ const TimelinePage = () => {
   const years = useMemo(() => {
     const s = new Set(incidents.map(i => i.date.substring(0, 4)));
     return Array.from(s).sort().reverse();
-  }, []);
+  }, [incidents]);
 
   const filtered = useMemo(() => {
     return [...incidents]
@@ -29,7 +32,11 @@ const TimelinePage = () => {
         }
         return true;
       });
-  }, [search, yearFilter, typeFilter]);
+  }, [incidents, search, yearFilter, typeFilter]);
+
+  const isRecent = (date: string) => {
+    return Date.now() - new Date(date).getTime() < 7 * 24 * 60 * 60 * 1000;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
@@ -65,31 +72,40 @@ const TimelinePage = () => {
       <div className="relative">
         <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-border" />
         <div className="space-y-8">
-          {filtered.map((incident, idx) => (
-            <div key={incident.id} className={`relative flex ${idx % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} items-start gap-8`}>
-              {/* Dot */}
-              <div className="absolute left-4 md:left-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background -translate-x-1/2 mt-6 z-10" />
-
-              <div className="ml-10 md:ml-0 md:w-1/2 md:px-8">
-                <div className="p-4 rounded-lg bg-card border border-border space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(incident.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                    </span>
-                    <Badge variant="outline" className={`text-[10px] ${incidentTypeBadgeClasses[incident.type]}`}>
-                      {incident.type}
-                    </Badge>
-                  </div>
-                  <h3 className="font-semibold text-foreground">{incident.title}</h3>
-                  <p className="text-sm text-muted-foreground">{incident.description}</p>
-                  <a href={incident.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                    {incident.sourceName} <ExternalLink className="h-3 w-3" />
-                  </a>
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="ml-10 md:ml-0 md:w-1/2 md:px-8">
+                  <Skeleton className="h-32 w-full rounded-lg" />
                 </div>
-              </div>
-            </div>
-          ))}
-          {filtered.length === 0 && (
+              ))
+            : filtered.map((incident, idx) => (
+                <div key={incident.id} className={`relative flex ${idx % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} items-start gap-8`}>
+                  <div className="absolute left-4 md:left-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background -translate-x-1/2 mt-6 z-10" />
+                  <div className="ml-10 md:ml-0 md:w-1/2 md:px-8">
+                    <div className="p-4 rounded-lg bg-card border border-border space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(incident.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                        </span>
+                        <Badge variant="outline" className={`text-[10px] ${incidentTypeBadgeClasses[incident.type]}`}>
+                          {incident.type}
+                        </Badge>
+                        {isRecent(incident.date) && (
+                          <Badge className="text-[10px] bg-green-500/20 text-green-400 border-green-500/30">
+                            LIVE
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-foreground">{incident.title}</h3>
+                      <p className="text-sm text-muted-foreground">{incident.description}</p>
+                      <a href={incident.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        {incident.sourceName} <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          {!loading && filtered.length === 0 && (
             <p className="text-center text-muted-foreground py-12">No incidents found matching your filters.</p>
           )}
         </div>
